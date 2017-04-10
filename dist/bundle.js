@@ -10362,6 +10362,8 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
 var _react = __webpack_require__(50);
@@ -10373,6 +10375,10 @@ var _style = __webpack_require__(192);
 var _style2 = _interopRequireDefault(_style);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
+
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
@@ -10388,17 +10394,30 @@ var App = function (_Component) {
 
     var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
 
-    _this.handleInputChange = function (coef) {
-      return function (e) {
-        var coefficients = _this.state.coefficients;
+    _this.handleInputChange = function (color) {
+      return function (coef) {
+        return function (e) {
+          var coefficients = _this.state.coefficients;
 
-        coefficients[coef] = parseFloat(e.target.value);
+          coefficients[color][coef] = parseFloat(e.target.value);
+          _this.setState({ coefficients: coefficients });
+        };
+      };
+    };
+
+    _this.addCoefficient = function (color) {
+      return function () {
+        var coefficients = _extends({}, _this.state.coefficients, _defineProperty({}, color, [].concat(_toConsumableArray(_this.state.coefficients[color]), [0])));
         _this.setState({ coefficients: coefficients });
       };
     };
 
     _this.state = {
-      coefficients: [1, 0, 0]
+      coefficients: {
+        red: [0, 1, 0, 0],
+        green: [0, -1, 0, 0],
+        blue: [0, 0, 1, 0]
+      }
     };
     return _this;
   }
@@ -10406,8 +10425,6 @@ var App = function (_Component) {
   _createClass(App, [{
     key: 'render',
     value: function render() {
-      var _this2 = this;
-
       var coefficients = this.state.coefficients;
 
       return _react2.default.createElement(
@@ -10418,27 +10435,65 @@ var App = function (_Component) {
           { className: _style2.default.welcome },
           'DCT'
         ),
-        [].map.call(coefficients, function (coef, i) {
-          return _react2.default.createElement(
-            'label',
-            { key: i, className: _style2.default.label },
-            _react2.default.createElement(
-              'span',
-              null,
-              i == 0 ? "" : i + 1,
-              'x'
-            ),
-            ' ',
-            ' ',
-            _react2.default.createElement('input', {
-              value: coef,
-              onChange: _this2.handleInputChange(i),
-              type: 'number',
-              step: '0.1'
-            })
-          );
-        }),
-        _react2.default.createElement(Preview, { coefficients: coefficients })
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Red'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: _style2.default.container },
+          _react2.default.createElement(CoefficientEditor, {
+            coefficients: coefficients.red,
+            handleInputChange: this.handleInputChange('red'),
+            addCoefficient: this.addCoefficient('red') }),
+          _react2.default.createElement(Preview, {
+            red: coefficients.red
+          })
+        ),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Green'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: _style2.default.container },
+          _react2.default.createElement(CoefficientEditor, {
+            coefficients: coefficients.green,
+            handleInputChange: this.handleInputChange('green'),
+            addCoefficient: this.addCoefficient('green') }),
+          _react2.default.createElement(Preview, {
+            green: coefficients.green
+          })
+        ),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Blue'
+        ),
+        _react2.default.createElement(
+          'div',
+          { className: _style2.default.container },
+          _react2.default.createElement(CoefficientEditor, {
+            coefficients: coefficients.blue,
+            handleInputChange: this.handleInputChange('blue'),
+            addCoefficient: this.addCoefficient('blue')
+          }),
+          _react2.default.createElement(Preview, {
+            blue: coefficients.blue
+          })
+        ),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'All'
+        ),
+        _react2.default.createElement(Preview, {
+          red: coefficients.red,
+          green: coefficients.green,
+          blue: coefficients.blue
+        })
       );
     }
   }]);
@@ -10447,6 +10502,37 @@ var App = function (_Component) {
 }(_react.Component);
 
 exports.default = App;
+
+
+function CoefficientEditor(props) {
+  return _react2.default.createElement(
+    'div',
+    null,
+    props.coefficients.map(function (coef, i) {
+      return _react2.default.createElement(
+        'label',
+        { key: i, className: _style2.default.label },
+        _react2.default.createElement('input', {
+          value: coef,
+          onChange: props.handleInputChange(i),
+          type: 'number',
+          step: '0.1'
+        }),
+        ' ',
+        _react2.default.createElement(
+          'span',
+          null,
+          i == 0 ? "c" : i == 1 ? "x" : i + "x"
+        )
+      );
+    }),
+    _react2.default.createElement(
+      'button',
+      { onClick: props.addCoefficient },
+      'Add'
+    )
+  );
+}
 
 var Preview = function (_Component2) {
   _inherits(Preview, _Component2);
@@ -10467,16 +10553,23 @@ var Preview = function (_Component2) {
 
         var ctx = this.canvas.getContext('2d');
 
-        var coefficients = this.props.coefficients;
+        var _props = this.props,
+            red = _props.red,
+            green = _props.green,
+            blue = _props.blue;
 
-        var calcVal = calculateValue(coefficients);
+        var calcRedVal = calculateValue(red || []);
+        var calcGreenVal = calculateValue(green || []);
+        var calcBlueVal = calculateValue(blue || []);
 
         ctx.clearRect(0, 0, width, height);
 
         for (var x = 0; x < width; x++) {
-          var val = (calcVal(x / width * Math.PI * 2) * 128 + 127).toFixed();
+          var redVal = (calcRedVal(x / width * Math.PI) * 128 + 127).toFixed();
+          var greenVal = (calcGreenVal(x / width * Math.PI) * 128 + 127).toFixed();
+          var blueVal = (calcBlueVal(x / width * Math.PI) * 128 + 127).toFixed();
 
-          ctx.fillStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+          ctx.fillStyle = 'rgb(' + redVal + ',' + greenVal + ',' + blueVal + ')';
           ctx.fillRect(x, 0, 1, height);
         }
       }
@@ -10494,10 +10587,10 @@ var Preview = function (_Component2) {
   }, {
     key: 'render',
     value: function render() {
-      var _this4 = this;
+      var _this3 = this;
 
       return _react2.default.createElement('canvas', { ref: function ref(_ref) {
-          return _this4.canvas = _ref;
+          return _this3.canvas = _ref;
         } });
     }
   }]);
@@ -10508,8 +10601,9 @@ var Preview = function (_Component2) {
 function calculateValue(coefficients) {
   var coefSum = coefficients.reduce(sum, 0);
   return function (x) {
+    if (coefSum == 0) return -1;
     return coefficients.map(function (coef, i) {
-      return coef * Math.cos((i + 1) * x);
+      return coef * Math.cos(i * x);
     }).reduce(sum, 0) / coefSum;
   };
 }
@@ -12520,11 +12614,12 @@ exports = module.exports = __webpack_require__(51)(undefined);
 
 
 // module
-exports.push([module.i, "._34WNos1bhrWjCLVJtFEKXo {\r\n  font-size: 2em;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c {\r\n  display: block;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c span {\r\n  display: inline-block;\r\n  width: 50px;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c input {\r\n  width: 100px;\r\n}\r\n", ""]);
+exports.push([module.i, "._34WNos1bhrWjCLVJtFEKXo {\r\n  font-size: 2em;\r\n}\r\n\r\n.kTsYMxZLPY8WA7Z5ltlDV {\r\n  display: flex;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c {\r\n  display: block;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c span {\r\n  display: inline-block;\r\n  width: 50px;\r\n}\r\n\r\n._2y4evEyn77wU2TvetoC64c input {\r\n  width: 100px;\r\n}\r\n", ""]);
 
 // exports
 exports.locals = {
 	"welcome": "_34WNos1bhrWjCLVJtFEKXo",
+	"container": "kTsYMxZLPY8WA7Z5ltlDV",
 	"label": "_2y4evEyn77wU2TvetoC64c"
 };
 

@@ -2,6 +2,10 @@
   font-size: 2em;
 }
 
+.container {
+  display: flex;
+}
+
 .label {
   display: block;
 }
