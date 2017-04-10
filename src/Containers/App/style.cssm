@@ -1,3 +1,16 @@
 .welcome {
-  font-size: 5em;
+  font-size: 2em;
+}
+
+.label {
+  display: block;
+}
+
+.label span {
+  display: inline-block;
+  width: 50px;
+}
+
+.label input {
+  width: 100px;
 }
