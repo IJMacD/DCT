@@ -10490,8 +10490,6 @@ var _style2 = _interopRequireDefault(_style);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -10506,19 +10504,42 @@ var InvTest = function (_Component) {
 
     var _this = _possibleConstructorReturn(this, (InvTest.__proto__ || Object.getPrototypeOf(InvTest)).call(this));
 
+    _this.handleInput = function (e) {
+      _this.setState({
+        rawValues: e.target.value,
+        values: e.target.value.split(",").map(function (s) {
+          return parseFloat(s);
+        }).filter(function (n) {
+          return !isNaN(n);
+        })
+      });
+    };
+
     _this.state = {
       values: [128, 130, 133, 136, 138, 140, 138, 135]
     };
+
+    _this.state.rawValues = _this.state.values.join(", ");
     return _this;
   }
 
   _createClass(InvTest, [{
     key: 'render',
     value: function render() {
-      var values = this.state.values;
+      var _state = this.state,
+          rawValues = _state.rawValues,
+          values = _state.values;
 
-      var transform = values.map(DCT_I2_MAT);
-      var compress = [].concat(_toConsumableArray(transform.slice(0, 3)), [0, 0, 0, 0, 0]);
+      var transformed = values.map(DCT_I2_MAT);
+      var inverted = transformed.map(DCT_I3_MAT);
+      var truncated = truncate(transformed, 3);
+      var compressed = truncated.map(DCT_I3_MAT);
+      var diffed = values.map(function (x, i) {
+        return x - compressed[i];
+      });
+      var errored = values.map(function (x, i) {
+        return diffed[i] / x * 100;
+      });
       return _react2.default.createElement(
         'div',
         null,
@@ -10532,13 +10553,18 @@ var InvTest = function (_Component) {
           null,
           'Input Values'
         ),
-        values.join(", "),
+        _react2.default.createElement('input', {
+          value: rawValues,
+          style: { fontSize: 16, width: 400 },
+          onChange: this.handleInput
+        }),
+        _react2.default.createElement(Preview, { values: values }),
         _react2.default.createElement(
           'h2',
           null,
           'Output Values'
         ),
-        transform.map(function (x) {
+        transformed.map(function (x) {
           return x.toFixed(3);
         }).join(", "),
         _react2.default.createElement(
@@ -10546,27 +10572,50 @@ var InvTest = function (_Component) {
           null,
           'Inverse Values'
         ),
-        transform.map(DCT_I3_MAT).map(function (x) {
+        inverted.map(function (x) {
           return x.toFixed();
+        }).join(", "),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Truncated Values'
+        ),
+        truncated.map(function (x) {
+          return x.toFixed(3);
         }).join(", "),
         _react2.default.createElement(
           'h2',
           null,
           'Compressed Values'
         ),
-        compress.map(DCT_I3_MAT).map(function (x) {
+        compressed.map(function (x) {
           return x.toFixed(3);
         }).join(", "),
+        _react2.default.createElement(Preview, { values: compressed }),
         _react2.default.createElement(
           'h2',
           null,
           'Diffed Values'
         ),
-        compress.map(DCT_I3_MAT).map(function (x, i) {
-          return x - values[i];
-        }).map(function (x) {
+        diffed.map(function (x) {
           return x.toFixed(3);
-        }).join(", ")
+        }).join(", "),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Error Values'
+        ),
+        errored.map(function (x) {
+          return x.toFixed(3) + '%';
+        }).join(", "),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Total Error'
+        ),
+        Math.sqrt(errored.map(function (x) {
+          return x * x;
+        }).reduce(sum, 0)).toFixed(3) + '%'
       );
     }
   }]);
@@ -10575,37 +10624,6 @@ var InvTest = function (_Component) {
 }(_react.Component);
 
 exports.default = InvTest;
-
-
-function CoefficientEditor(props) {
-  return _react2.default.createElement(
-    'div',
-    null,
-    props.coefficients.map(function (coef, i) {
-      return _react2.default.createElement(
-        'label',
-        { key: i, className: _style2.default.label },
-        _react2.default.createElement('input', {
-          value: coef,
-          onChange: props.handleInputChange(i),
-          type: 'number',
-          step: '0.1'
-        }),
-        ' ',
-        _react2.default.createElement(
-          'span',
-          null,
-          i == 0 ? "c" : i == 1 ? "x" : i + "x"
-        )
-      );
-    }),
-    _react2.default.createElement(
-      'button',
-      { onClick: props.addCoefficient },
-      'Add'
-    )
-  );
-}
 
 var Preview = function (_Component2) {
   _inherits(Preview, _Component2);
@@ -10626,24 +10644,19 @@ var Preview = function (_Component2) {
 
         var ctx = this.canvas.getContext('2d');
 
-        var _props = this.props,
-            red = _props.red,
-            green = _props.green,
-            blue = _props.blue;
+        var values = this.props.values;
 
-        var calcRedVal = calculateValue(red || []);
-        var calcGreenVal = calculateValue(green || []);
-        var calcBlueVal = calculateValue(blue || []);
 
         ctx.clearRect(0, 0, width, height);
 
-        for (var x = 0; x < width; x++) {
-          var redVal = (calcRedVal(x / width * Math.PI) * 128 + 127).toFixed();
-          var greenVal = (calcGreenVal(x / width * Math.PI) * 128 + 127).toFixed();
-          var blueVal = (calcBlueVal(x / width * Math.PI) * 128 + 127).toFixed();
+        var length = values.length;
 
-          ctx.fillStyle = 'rgb(' + redVal + ',' + greenVal + ',' + blueVal + ')';
-          ctx.fillRect(x, 0, 1, height);
+        var w = width / length;
+
+        for (var i = 0; i < length; i += 1) {
+          var val = values[i].toFixed();
+          ctx.fillStyle = 'rgb(' + val + ',' + val + ',' + val + ')';
+          ctx.fillRect(Math.floor(i * w), 0, w + 1, height);
         }
       }
     }
@@ -10692,6 +10705,12 @@ function DCT_I3(k, x) {
   return (x[0] / Math.SQRT2 + xp.map(function (x_n, n) {
     return x_n * Math.cos(Math.PI / N * (n + 1) * (k + 0.5));
   }).reduce(sum, 0)) * Math.sqrt(2 / N);
+}
+
+function truncate(x, n) {
+  return x.map(function (x, i) {
+    return i < n ? x : 0;
+  });
 }
 
 function sum(a, b) {

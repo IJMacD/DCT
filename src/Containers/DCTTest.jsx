@@ -11,74 +11,85 @@ export default class InvTest extends Component {
       // values: [8, 16, 24, 32, 40, 48, 56, 64],
       // values: [1, 2, 3, 4, 5, 6, 7, 8],
     };
+
+    this.state.rawValues = this.state.values.join(", ");
+  }
+
+  handleInput = (e) => {
+    this.setState({
+      rawValues: e.target.value,
+      values: e.target.value.split(",").map(s=>parseFloat(s)).filter(n=>!isNaN(n))
+    });
   }
 
   render () {
-    const { values } = this.state;
-    const transform = values.map(DCT_I2_MAT);
-    const compress = [ ...transform.slice(0, 3), 0, 0, 0, 0, 0 ];
+    const { rawValues, values } = this.state;
+    const transformed = values.map(DCT_I2_MAT);
+    const inverted = transformed.map(DCT_I3_MAT);
+    const truncated = truncate(transformed, 3);
+    const compressed = truncated.map(DCT_I3_MAT);
+    const diffed = values.map((x,i) => x - compressed[i]);
+    const errored = values.map((x, i) => diffed[i]/x*100);
     return (
       <div>
         <h1 className={classes.welcome}>
           DCT Test
         </h1>
         <h2>Input Values</h2>
-        {
-          values.join(", ")
-        }
+        <input
+          value={rawValues}
+          style={{ fontSize: 16, width: 400 }}
+          onChange={this.handleInput}
+        />
+        <Preview values={values} />
         <h2>Output Values</h2>
         {
-          transform
+          transformed
             .map(x=>x.toFixed(3))
             .join(", ")
         }
         <h2>Inverse Values</h2>
         {
-          transform
-            .map(DCT_I3_MAT)
+          inverted
             .map(x=>x.toFixed())
+            .join(", ")
+        }
+        <h2>Truncated Values</h2>
+        {
+          truncated
+            .map(x=>x.toFixed(3))
             .join(", ")
         }
         <h2>Compressed Values</h2>
         {
-          compress
-            .map(DCT_I3_MAT)
+          compressed
             .map(x=>x.toFixed(3))
             .join(", ")
         }
+        <Preview values={compressed} />
         <h2>Diffed Values</h2>
         {
-          compress
-            .map(DCT_I3_MAT)
-            .map((x,i) => x - values[i])
+          diffed
             .map(x=>x.toFixed(3))
             .join(", ")
+        }
+        <h2>Error Values</h2>
+        {
+          errored
+            .map(x=>x.toFixed(3)+'%')
+            .join(", ")
+        }
+        <h2>Total Error</h2>
+        {
+          Math.sqrt(
+            errored
+              .map(x=>x*x)
+              .reduce(sum, 0)
+          ).toFixed(3)+'%'
         }
       </div>
     );
   }
-}
-
-function CoefficientEditor (props) {
-  return (
-    <div>
-      {
-        props.coefficients.map((coef,i) => (
-          <label key={i} className={classes.label}>
-            <input
-              value={coef}
-              onChange={props.handleInputChange(i)}
-              type="number"
-              step="0.1"
-            />
-            { ' ' }
-            <span>{i==0?"c":i==1?"x":i+"x"}</span>
-          </label>
-        ))
-      }
-      <button onClick={props.addCoefficient}>Add</button>
-    </div>
-  );
 }
 
 class Preview extends Component {
@@ -87,20 +98,17 @@ class Preview extends Component {
       const {width, height } = this.canvas;
       const ctx = this.canvas.getContext('2d');
 
-      const { red, green, blue } = this.props;
-      const calcRedVal = calculateValue(red || []);
-      const calcGreenVal = calculateValue(green || []);
-      const calcBlueVal = calculateValue(blue || []);
+      const { values } = this.props;
 
       ctx.clearRect(0,0,width, height);
 
-      for (let x = 0; x < width; x++) {
-        const redVal =    (calcRedVal(x/width * Math.PI) * 128 + 127).toFixed();
-        const greenVal =  (calcGreenVal(x/width * Math.PI) * 128 + 127).toFixed();
-        const blueVal =   (calcBlueVal(x/width * Math.PI) * 128 + 127).toFixed();
+      const { length } = values;
+      const w = width / length;
 
-        ctx.fillStyle = `rgb(${redVal},${greenVal},${blueVal})`;
-        ctx.fillRect(x, 0, 1, height);
+      for (let i = 0; i < length; i += 1) {
+        const val = values[i].toFixed();
+        ctx.fillStyle = `rgb(${val},${val},${val})`;
+        ctx.fillRect(Math.floor(i * w), 0, w+1, height);
       }
     }
   }
@@ -142,6 +150,10 @@ function DCT_I3 (k, x) {
     x[0] / Math.SQRT2 +
     xp.map((x_n, n) => x_n * Math.cos(Math.PI / N * (n + 1) * (k + 0.5))).reduce(sum, 0)
   ) * Math.sqrt(2 / N);
+}
+
+function truncate (x, n) {
+  return x.map((x,i) => i < n ? x : 0);
 }
 
 function sum (a,b) {
