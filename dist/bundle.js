@@ -10490,6 +10490,8 @@ var _style2 = _interopRequireDefault(_style);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _toConsumableArray(arr) { if (Array.isArray(arr)) { for (var i = 0, arr2 = Array(arr.length); i < arr.length; i++) { arr2[i] = arr[i]; } return arr2; } else { return Array.from(arr); } }
+
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
@@ -10515,6 +10517,8 @@ var InvTest = function (_Component) {
     value: function render() {
       var values = this.state.values;
 
+      var transform = values.map(DCT_I2_MAT);
+      var compress = [].concat(_toConsumableArray(transform.slice(0, 3)), [0, 0, 0, 0, 0]);
       return _react2.default.createElement(
         'div',
         null,
@@ -10534,16 +10538,34 @@ var InvTest = function (_Component) {
           null,
           'Output Values'
         ),
-        values.map(DCT_I2_MAT).map(function (x) {
+        transform.map(function (x) {
           return x.toFixed(3);
         }).join(", "),
         _react2.default.createElement(
           'h2',
           null,
-          'Reverse Values'
+          'Inverse Values'
         ),
-        values.map(DCT_I2_MAT).map(DCT_I3_MAT).map(function (x) {
+        transform.map(DCT_I3_MAT).map(function (x) {
           return x.toFixed();
+        }).join(", "),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Compressed Values'
+        ),
+        compress.map(DCT_I3_MAT).map(function (x) {
+          return x.toFixed(3);
+        }).join(", "),
+        _react2.default.createElement(
+          'h2',
+          null,
+          'Diffed Values'
+        ),
+        compress.map(DCT_I3_MAT).map(function (x, i) {
+          return x - values[i];
+        }).map(function (x) {
+          return x.toFixed(3);
         }).join(", ")
       );
     }

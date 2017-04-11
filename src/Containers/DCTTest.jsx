@@ -15,6 +15,8 @@ export default class InvTest extends Component {
 
   render () {
     const { values } = this.state;
+    const transform = values.map(DCT_I2_MAT);
+    const compress = [ ...transform.slice(0, 3), 0, 0, 0, 0, 0 ];
     return (
       <div>
         <h1 className={classes.welcome}>
@@ -26,11 +28,31 @@ export default class InvTest extends Component {
         }
         <h2>Output Values</h2>
         {
-          values.map(DCT_I2_MAT).map(x=>x.toFixed(3)).join(", ")
+          transform
+            .map(x=>x.toFixed(3))
+            .join(", ")
         }
-        <h2>Reverse Values</h2>
+        <h2>Inverse Values</h2>
         {
-          values.map(DCT_I2_MAT).map(DCT_I3_MAT).map(x=>x.toFixed()).join(", ")
+          transform
+            .map(DCT_I3_MAT)
+            .map(x=>x.toFixed())
+            .join(", ")
+        }
+        <h2>Compressed Values</h2>
+        {
+          compress
+            .map(DCT_I3_MAT)
+            .map(x=>x.toFixed(3))
+            .join(", ")
+        }
+        <h2>Diffed Values</h2>
+        {
+          compress
+            .map(DCT_I3_MAT)
+            .map((x,i) => x - values[i])
+            .map(x=>x.toFixed(3))
+            .join(", ")
         }
       </div>
     );
